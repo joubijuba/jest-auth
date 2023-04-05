@@ -5,10 +5,11 @@ import { User } from "../interfaces/user.interface"
 @Controller()
 export class AuthController {
 
+  authService : AuthService 
+
   constructor(
-    private readonly authService : AuthService
     ) {
-    this.authService = authService
+    this.authService = new AuthService ()
   }
 
   @Get()
@@ -31,21 +32,24 @@ export class AuthController {
   }
 
   @Post("signup")
-  signingUp(@Body() user : User): string {
-    let usersCopy : User [] 
-    usersCopy = this.authService.readAll()
-    usersCopy.forEach(u => {
-      if (u.email === user.email){
-        return "this user already exists"
-      }
-    })
-    if (user.password !== user.passwordConfirmation){
-        return "must input same password" 
+  async signingUp(@Body() user : User){
+    // let bool : boolean = await this.authService.userExists(user.email)
+    let bool = false 
+    if (bool){
+        return "user already exists" 
     }
-    this.authService.create(user)
-    return "successfully signed up"
+    else {
+      if (user.password !== user.passwordConfirmation){
+        return "please input the same password"
+      }
+      else {
+        await this.authService.create(user)
+        return "successfully signed up"
+      }
+    }
   }
 
+  /// signin page
   @Get("signin")
   getSignInPage() : any {
     return (`

@@ -1,23 +1,68 @@
 import { Injectable } from '@nestjs/common';
-import {User} from "../interfaces/user.interface"
-import fs from "fs"
+import { User } from "../interfaces/user.interface"
+import { UserDB } from "../interfaces/userDB.interface"
+import * as path from "path"
+import {promises as fsPromises} from "fs"
+import {createHash, randomBytes} from "crypto"
 
 @Injectable()
 export class AuthService {
-  private readonly users : User[] = []
 
-  /*
-  async fetchList() : User[]{
-    let allUsers = await fs.promises.readFile("../usersRepo/users.JSON")
+  private readonly usersRepo : string = "users.JSON"
+
+  constructor(){
+    /*
+    if (!usersRepo){
+      throw new Error ("must input a file name")
+    }
+    this.usersRepo = usersRepo 
+    try {
+      /// can't use async in constructor, then we use sync
+      fs.accessSync(usersRepo)
+    }
+    catch {
+      /// creates the usersRepo if it doesn't exist
+      fs.writeFileSync(usersRepo, "[]")
+    }
+    */
   }
-  */
 
-  create(user : User) {
-    this.users.push(user)
+  private async fetchList(): Promise<UserDB[]> {
+    let filePath : string = path.join("./usersRepo", this.usersRepo)
+    let allUsers = await fsPromises.readFile(
+      filePath,
+      {encoding : 'utf8'})
+    let users = JSON.parse(allUsers)
+    return users
   }
 
-  readAll() : User[] {
-    return this.users;
+  private async writeList(newList : UserDB[]): Promise<any>{
+    await fsPromises.writeFile(
+      path.join("./usersRepo", this.usersRepo),
+      JSON.stringify(newList, null, 2))
+  }
+
+  async create(user : User): Promise<any>{
+    let {email, password} = user
+    let record = await this.fetchList()
+    let hashedpw = createHash('sha256').update(password).digest("hex")
+    let id = randomBytes(4).toString("hex")
+    let userDB : UserDB = {
+      email, 
+      hashedpw,
+      id
+    }
+    // record.push(userDB)
+    console.log(userDB)
+    // await this.writeList(record)
+  }
+
+  async userExists(mailAddress : string): Promise<boolean> {
+    let record = await this.fetchList()
+    let bool : boolean
+    let user = record.find(u => u.email = mailAddress)
+    bool = user ? true : false
+    return bool
   }
 
 }

@@ -27,8 +27,9 @@ export class AuthService {
     */
   }
 
-  private async fetchList(): Promise<UserDB[]> {
-    let filePath : string = path.join("./usersRepo", this.usersRepo)
+  async fetchList(): Promise<UserDB[]> {
+    let filePath : string = path.join(
+      "src", "auth", "usersRepo", this.usersRepo)
     let allUsers = await fsPromises.readFile(
       filePath,
       {encoding : 'utf8'})
@@ -38,30 +39,28 @@ export class AuthService {
 
   private async writeList(newList : UserDB[]): Promise<any>{
     await fsPromises.writeFile(
-      path.join("./usersRepo", this.usersRepo),
+      path.join("src", "auth", "usersRepo", this.usersRepo),
       JSON.stringify(newList, null, 2))
   }
 
   async create(user : User): Promise<any>{
     let {email, password} = user
     let record = await this.fetchList()
-    let hashedpw = createHash('sha256').update(password).digest("hex")
+    let buf = createHash('sha256').update(password).digest("hex")
+    let hashedpw = buf.toString()
     let id = randomBytes(4).toString("hex")
     let userDB : UserDB = {
       email, 
       hashedpw,
       id
     }
-    // record.push(userDB)
-    console.log(userDB)
-    // await this.writeList(record)
+    record.push(userDB)
+    await this.writeList(record)
   }
 
-  async userExists(mailAddress : string): Promise<boolean> {
+  async userExists(mailAddress : string): Promise<Boolean> {
     let record = await this.fetchList()
-    let bool : boolean
-    let user = record.find(u => u.email = mailAddress)
-    bool = user ? true : false
+    let bool : boolean = record.some(u => u.email === mailAddress)
     return bool
   }
 

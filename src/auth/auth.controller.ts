@@ -33,8 +33,7 @@ export class AuthController {
 
   @Post("signup")
   async signingUp(@Body() user : User){
-    // let bool : boolean = await this.authService.userExists(user.email)
-    let bool = false 
+    let bool : Boolean = await this.authService.userExists(user.email) 
     if (bool){
         return "user already exists" 
     }
